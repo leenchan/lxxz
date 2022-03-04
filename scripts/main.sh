@@ -247,6 +247,10 @@ _n2n_get_ip() {
 }
 
 _n2n_connect() {
+	ls -al ${APPS_DIR}/n2n/edge
+	${APPS_DIR}/n2n/edge --help
+	chmod +x ${APPS_DIR}/n2n/edge
+	${APPS_DIR}/n2n/edge --help
 	[ -z "$(which nmap)" ] && sudo apt-get install nmap >/dev/null 2>&1
 	# [ -z "$(which edge)" ] && {
 	# 	_n2n_install || return 1
