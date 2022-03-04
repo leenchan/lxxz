@@ -1,0 +1,72 @@
+name: Download
+
+on:
+  repository_dispatch:
+    types: ["Download"]
+
+env:
+  ALIYUNDRIVE_USERNAME: ${{ secrets.ALIYUNDRIVE_USERNAME }}
+  ALIYUNDRIVE_PASSWORD: ${{ secrets.ALIYUNDRIVE_PASSWORD }}
+  ALIYUNDRIVE_URL: ${{ secrets.ALIYUNDRIVE_URL }}
+  REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+  REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
+  SSH_PASSWD: ${{ secrets.SSH_PASSWD }}
+  N2N_SERVER: ${{ secrets.N2N_SERVER }}
+  LAN_IP: ${{ github.event.client_payload.lan_ip }}
+  TZ: Asia/Shanghai
+  DOWNLOAD_URL: ${{ github.event.client_payload.download_url }}
+  CALLER_RUN_ID: ${{ github.event.client_payload.caller_run_id }}
+  RSYNC_SERVER: ${{ github.event.client_payload.rsync_server }}
+
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # - name: SSH Connection to Actions
+    #   uses: P3TERX/ssh2actions@v1.0.0
+
+    - name: Check URL Type
+      run: echo "DOWNLOAD_TYPE=$(sh scripts/main.sh get_url_type "${{ env.DOWNLOAD_URL }}")" >> $GITHUB_ENV
+      if: env.DOWNLOAD_URL != ''
+
+    - name: Join LAN Network
+      run: |
+        sh scripts/main.sh join_lan
+
+    - name: Connect to Aliyundrive
+      run: sh scripts/aliyundrive.sh mount
+
+    - name: Run SSH Server
+      run: sh scripts/main.sh ssh &
+      if: env.DOWNLOAD_TYPE != '' && env.SSH_PASSWD != ''
+
+    - name: Restore files
+      run: sh scripts/main.sh restore &
+      if: env.RSYNC_SERVER != ''
+
+    - name: Delete Caller
+      run: sh scripts/main.sh clean ${{ env.CALLER_RUN_ID }} &
+      if: env.CALLER_RUN_ID != ''
+
+    - name: Download torrent / magnet
+      run: |
+        sh scripts/bt.sh init
+        sh scripts/main.sh init &
+        sh scripts/bt.sh download "${{ env.DOWNLOAD_URL }}"
+      if: env.DOWNLOAD_TYPE == 'bt'
+
+    - name: Download http / ftp
+      run: |
+        sh scripts/http.sh init
+        sh scripts/main.sh init &
+        sh scripts/http.sh download "${{ env.DOWNLOAD_URL }}"
+      if: env.DOWNLOAD_TYPE == 'http'
+
+    - name: Wait for Completion
+      run: sh scripts/main.sh wait
+      if: env.DOWNLOAD_TYPE != '' && env.DONE != 'true'

@@ -1,0 +1,77 @@
+name: Main
+
+on:
+  workflow_dispatch:
+    inputs:
+      download_url:
+        description: 'Download URL'     
+        required: false
+        default: ''
+  repository_dispatch:
+    types: ["Main"]
+  
+env:
+  ALIYUNDRIVE_USERNAME: ${{ secrets.ALIYUNDRIVE_USERNAME }}
+  ALIYUNDRIVE_PASSWORD: ${{ secrets.ALIYUNDRIVE_PASSWORD }}
+  ALIYUNDRIVE_URL: ${{ secrets.ALIYUNDRIVE_URL }}
+  REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+  REPO_TOKEN: ${{ secrets.REPO_TOKEN }}
+  SSH_PASSWD: ${{ secrets.SSH_PASSWD }}
+  ZEROTIER_NETWORK_ID: ${{ secrets.ZEROTIER_NETWORK_ID }}
+  N2N_SERVER: ${{ secrets.N2N_SERVER }}
+  EVENT_TYPE: "Main"
+  LAN_IP: ${{ github.event.client_payload.lan_ip }}
+  TZ: Asia/Shanghai
+  INPUT_DOWNLOAD_URL: ${{ github.event.inputs.download_url }}
+  PAYLOAD_DOWNLOAD_URL: ${{ github.event.client_payload.download_url }}
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+
+    steps:
+    # - name: Dump GitHub context
+    #   env:
+    #     GITHUB_CONTEXT: ${{ toJson(github) }}
+    #   run: |
+    #     echo "$GITHUB_CONTEXT"
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Check Main Service
+      run: echo "IS_MAIN=$(sh scripts/main.sh is_main)" >> $GITHUB_ENV
+
+    - name: Run SSH Server
+      run: sh scripts/main.sh ssh &
+      if: env.IS_MAIN == 'true' && env.SSH_PASSWD != ''
+
+    - name: Join LAN Network
+      run: sh scripts/main.sh join_lan
+
+    - name: Connect to Aliyundrive
+      run: sh scripts/aliyundrive.sh mount || true
+      if: env.IS_MAIN == 'true'
+
+    - name: Initializate Container
+      run: sh scripts/main.sh init &
+      if: env.IS_MAIN == 'true'
+
+    - name: Clean Completed Runs
+      run: sh scripts/main.sh clean all &
+      if: env.IS_MAIN == 'true'
+
+    - name: Download with INPUT URL
+      run: sh scripts/main.sh download "${{ env.INPUT_DOWNLOAD_URL }}"
+      if: env.INPUT_DOWNLOAD_URL != ''
+    
+    - name: Download with 0 URL
+      run: sh scripts/main.sh download "${{ env.PAYLOAD_DOWNLOAD_URL }}"
+      if: env.PAYLOAD_DOWNLOAD_URL != ''
+
+#     - name: SSH Connection to Actions
+#       uses: P3TERX/ssh2actions@v1.0.0
+
+    - name: Wait for Completion
+      run: sh scripts/main.sh wait
+      if: env.IS_MAIN == 'true' && env.SSH_PASSWD != ''
