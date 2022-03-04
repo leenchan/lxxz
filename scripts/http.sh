@@ -168,32 +168,36 @@ _download_video() {
 _download_roms() {
 	[ -z "$(which rclone)" ] && sudo ln -sf "$APPS_DIR/rclone/rclone" /usr/bin/rclone
 	add_host "static.downloadroms.io" "104.221.221.153"
-	__ROM_CONSOLE__=""
-	__ROM_PAGE__=""
-	__ROM_SORT__=""
-	__ROM_NAME__=""
-	__ROM_WEBSITE__=""
-	# tmux_api sessions/keep_alive/run "sh '$CUR_DIR/main.sh' keep_alive"
-	if echo "$1" | grep -Eq 'romsgames.net/'; then
-		__ROM_WEBSITE__="romsgames.net"
-		echo "$1" | grep -Eq 'romsgames.net/roms/[-a-zA-Z0-9]+' && __ROM_CONSOLE__=$(echo "$1" | grep -Eo 'romsgames.net/roms/[-a-zA-Z0-9]+' | awk -F'/' '{print $3}')
-		echo "$1" | grep -Eq 'page=[0-9]+' && __ROM_PAGE__=$(echo "$1" | grep -Eo 'page=[0-9]+' | awk -F'=' '{print $2}')
-		echo "$1" | grep -Eq 'sort=[a-z]+' && __ROM_SORT__=$(echo "$1" | grep -Eo 'page=[a-z]+' | awk -F'=' '{print $2}')
-		echo "$1" | grep -Eq 'letter=[a-z0-9]+' && __ROM_LETTER__=$(echo "$1" | grep -Eo 'letter=[a-z0-9]+' | awk -F'=' '{print $2}')
-		echo "$1" | grep -Eq 'romsgames.net/[-a-zA-Z0-9]+-rom-[-a-zA-Z0-9]+' && {
-			__ROM__=$(echo "$1" | grep -Eo 'romsgames.net/[-a-zA-Z0-9]+-rom-[-a-zA-Z0-9]+' | awk -F'/' '{print $2}')
-			eval $(echo "$__ROM__" | awk -F'-rom-' '{print "__ROM_CONSOLE__=\""$1"\";__ROM_NAME__=\""$2"\""}')
-		}
-	fi
-	echo "WEBSITE: $__ROM_WEBSITE__"
-	echo "CONSOLE: $__ROM_CONSOLE__"
-	[ -z "$__ROM_WEBSITE__" ] || [ -z "$__ROM_CONSOLE__" ] || {
-		export WEBSITE="$__ROM_WEBSITE__"
-		export ROM_SORT="$__ROM_SORT__"
-		export ROM_LETTER="$__ROM_LETTER__"
-		echo "sh \"$CUR_DIR/roms.sh\" download \"$__ROM_CONSOLE__$([ -z "$__ROM_PAGE__" ] || echo "/$__ROM_PAGE__")$([ -z "$__ROM_NAME__" ] || echo "/$__ROM_NAME__")\""
-		sh "$CUR_DIR/roms.sh" download "$__ROM_CONSOLE__$([ -z "$__ROM_PAGE__" ] || echo "/$__ROM_PAGE__")$([ -z "$__ROM_NAME__" ] || echo "/$__ROM_NAME__")" || return 1
+	WEBSITE=""
+	ROM_CONSOLE=""
+	ROM_SHORT_NAME=""
+	ROM_PAGE=""
+	__ROM_DL__=$(echo "$1" | awk '{gsub(/^https?:\/\/(www\.)?/,"",$0); gsub(/\/roms/,"",$0) print $0}')
+	eval "$(echo "$__ROM_DL__" | awk '{print WEBSITE=\""$1"\"; ROM_CONSOLE=\""$1"\"; ROM_SHORT_NAME=\""$2"\"; ROM_PAGE=\""$3"\""}')"
+	[ "$ROM_SHORT_NAME" = "page" ] && ROM_SHORT_NAME="$ROM_PAGE"
+	cat <<-EOF
+	URL: $1
+	ROM_CONSOLE: $ROM_CONSOLE
+	ROM_SHORT_NAME: $ROM_SHORT_NAME
+	ROM_PAGE: $ROM_PAGE
+	EOF
+	[ -z "$WEBSITE" ] || {
+		export WEBSITE="$WEBSITE"
+		sh "$CUR_DIR/roms.sh" download "$ROM_CONSOLE$([ -z "$ROM_SHORT_NAME" ] || echo "/$ROM_SHORT_NAME")" || return 1
 	}
+	# tmux_api sessions/keep_alive/run "sh '$CUR_DIR/main.sh' keep_alive"
+	# if echo "$1" | grep -Eq 'romsgames.net/'; then
+	# 	__ROM_WEBSITE__="romsgames.net"
+	# 	echo "$1" | grep -Eq 'romsgames.net/roms/[-a-zA-Z0-9]+' && __ROM_CONSOLE__=$(echo "$1" | grep -Eo 'romsgames.net/roms/[-a-zA-Z0-9]+' | awk -F'/' '{print $3}')
+	# 	echo "$1" | grep -Eq 'page=[0-9]+' && __ROM_PAGE__=$(echo "$1" | grep -Eo 'page=[0-9]+' | awk -F'=' '{print $2}')
+	# 	echo "$1" | grep -Eq 'sort=[a-z]+' && __ROM_SORT__=$(echo "$1" | grep -Eo 'page=[a-z]+' | awk -F'=' '{print $2}')
+	# 	echo "$1" | grep -Eq 'letter=[a-z0-9]+' && __ROM_LETTER__=$(echo "$1" | grep -Eo 'letter=[a-z0-9]+' | awk -F'=' '{print $2}')
+	# 	echo "$1" | grep -Eq 'romsgames.net/[-a-zA-Z0-9]+-rom-[-a-zA-Z0-9]+' && {
+	# 		__ROM__=$(echo "$1" | grep -Eo 'romsgames.net/[-a-zA-Z0-9]+-rom-[-a-zA-Z0-9]+' | awk -F'/' '{print $2}')
+	# 		eval $(echo "$__ROM__" | awk -F'-rom-' '{print "__ROM_CONSOLE__=\""$1"\";__ROM_NAME__=\""$2"\""}')
+	# 	}
+	# elif 
+	# fi
 	while true
 	do
 		tmux ls | grep -Eq '^rom-' || sh "$CUR_DIR/main.sh" end
@@ -225,7 +229,7 @@ _download() {
 				_download_github "$__URL__"
 			elif echo "$__URL__" | grep -Eq 'https://www\.youtube\.com/watch\?v='; then
 				_download_video "$__URL__"
-			elif echo "$__URL__" | grep -Eq '(emulatorgames\.net|romsgames\.net|)'; then
+			elif echo "$__URL__" | grep -Eq '(emulatorgames\.net|romsgames\.net|romspure\.cc)'; then
 				_download_roms "$__URL__"
 			else
 				_aria2_api add "$@"
