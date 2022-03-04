@@ -247,7 +247,7 @@ _n2n_get_ip() {
 }
 
 _n2n_connect() {
-	sudo chmod -R 777 "${APPS_DIR}/n2n"
+	sudo chmod -R 777 "${APPS_DIR}"
 	[ -z "$(which nmap)" ] && sudo apt-get install nmap >/dev/null 2>&1
 	# [ -z "$(which edge)" ] && {
 	# 	_n2n_install || return 1
