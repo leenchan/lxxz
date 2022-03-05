@@ -1,5 +1,5 @@
 
-ROMS_ROOT_DIR="/home/runner/roms"
+[ -d "/home/runner" ] && ROMS_ROOT_DIR="/home/runner/roms"
 [ -z "$DOWNLOAD_DIR" ] || ROMS_ROOT_DIR="$DOWNLOAD_DIR"
 [ -z "$RCLONE_ALIYUN_ROMS_DIR" ] && RCLONE_ALIYUN_ROMS_DIR="aliyun:/Game/roms"
 INCLUDED_ALIYUN="true"

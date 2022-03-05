@@ -313,7 +313,7 @@ gen_index() {
 			});
 			cover && romCover.append(cover);
 			title && romDetails.append(title);
-			romDetails.innerHTML = romDetails.innerHTML + '<div class="rom-title-sub"></div>' + '<div class="rom-labels"><a href="https://www.youtube.com/results?search_query='+title.textContent.replace(/\s+/,"+")+'" target="_blank"><span class="icon icon-video"></span></a></div>';
+			romDetails.innerHTML = romDetails.innerHTML + '<div class="rom-title-sub"></div>' + '<div class="rom-labels"><a href="https://www.youtube.com/results?search_query='+title.textContent.replace(/\s+/g,'+')+'+'+('$1'.replace(/-/g,'+'))+'" target="_blank"><span class="icon icon-video"></span></a></div>';
 			var infoFile = dom.getAttribute('data-info');
 			if (infoFile && infoFile != '') {
 				var xhr = new XMLHttpRequest();
@@ -495,11 +495,26 @@ download_rom() {
 			;;
 		"romspure.cc")
 			_ROM_HTML_=$(fetch_html "https://romspure.cc/roms/$1/$2/" --oneline)
-			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g')
+			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g')
 			_ROM_DL_BTN_URL_=$(echo "$_ROM_HTML_" | grep -Eo 'http[^"]+/download/[^"]+')
 			[ -z "$_ROM_DL_BTN_URL_" ] && echo "[ERR] NO ROM Files."
 			[ -z "$_ROM_DL_BTN_URL_" ] || {
 				_ROM_DL_URL_LIST_=$(fetch_html "$_ROM_DL_BTN_URL_" | grep -Eo 'http[^"]+/download/[^"]+')
+				[ "$_ROM_DL_URL_LIST_" = "$_ROM_DL_BTN_URL_" ] && {
+					_ROM_DL_URL_LIST_=""
+					_ROM_DL_URL_INDEX_=1
+					while true
+					do
+						fetch_html "$_ROM_DL_BTN_URL_/$_ROM_DL_URL_INDEX_" -skL | grep -q 'click-here' && {
+							[ -z "$_ROM_DL_URL_LIST_" ] && _ROM_DL_URL_LIST_="$_ROM_DL_BTN_URL_/$_ROM_DL_URL_INDEX_" || _ROM_DL_URL_LIST_=$(cat <<-EOF
+							$_ROM_DL_URL_LIST_
+							$_ROM_DL_BTN_URL_/$_ROM_DL_URL_INDEX_
+							EOF
+							)
+						} || break
+						_ROM_DL_URL_INDEX_=$((_ROM_DL_URL_INDEX_+1))
+					done
+				}
 				# __RETRY_GET_FILE_URL__=3
 				# while [ "$__RETRY_GET_FILE_URL__" -gt 0 ]
 				# do
@@ -667,7 +682,7 @@ dl_page() {
 	return 0
 }
 
-dl_console() {
+download_console() {
 	_PAGES_=""
 	case "$WEBSITE" in
 		"romsgames.net")
@@ -703,7 +718,7 @@ download_roms() {
 	[ -z "$1" ] && return 1
 	eval $(echo "$1" | awk -F'/' '{print "__CONSOLE__=\""$1"\"; __ROM_SHORT_NAME__=\""$2"\""}')
 	if [ -z "$__ROM_SHORT_NAME__" ]; then
-		dl_console "$@"
+		download_console "$@"
 	else
 		[ -z "$__CONSOLE__" -o -z "$__ROM_SHORT_NAME__" ] && echo "[ERR] Please input a valid rom name: CONSOLE/GAME_SHORT_NAME" && return 1
 		if echo "$__ROM_SHORT_NAME__" | grep -Eq '^[0-9]+$' && [ $__ROM_SHORT_NAME__ -ge 1 ]; then
@@ -720,15 +735,16 @@ list_roms() {
 	case "$WEBSITE" in
 		"romsgames.net")
 			_HTML_=$(curl "https://www.romsgames.net/roms/" -skL)
-			_CONSOLE_LIST_=$(echo "$_HTML_" | sed -E 's/(<a href="\/roms\/[^>]+>)/\n\1/g' | grep 'titlebox' | sed -E -e 's/.*href="([^"]+)".*>([^<]+)+.*>\s*([0-9]+).*/\2::::\1::::\3/g')
+			_CONSOLE_LIST_=$(echo "$_HTML_" | sed -E 's/(<a href="\/roms\/[^>]+>)/\n\1/g' | grep 'titlebox' | sed -E -e 's/.*href="([^"]+)".*>([^<]+)+.*>\s*([0-9]+).*/\2::::\1::::\3/g' | sort)
 			;;
 		"emulatorgames.net")
 			_HTML_=$(curl https://www.emulatorgames.net/roms/ -skL)
-			_CONSOLE_LIST_=$(echo "$_HTML_" | sed -E 's/(<\/?ul[^>]*>)/\n\1/g' | grep 'site-list' | sed -E 's/(<\/?li[^>]*>)/\n\1/g' | grep '^<li' | grep '/roms/' | sed -E 's/.*href="([^"]+)".*>([^<]+)<.*/\2::::\1::::/g')
+			_CONSOLE_LIST_=$(echo "$_HTML_" | sed -E 's/(<\/?ul[^>]*>)/\n\1/g' | grep 'site-list' | sed -E 's/(<\/?li[^>]*>)/\n\1/g' | grep '^<li' | grep '/roms/' | sed -E 's/.*href="([^"]+)".*>([^<]+)<.*/\2::::\1::::/g' | sort)
 			[ -z "$1" ] || {
 				_PAGES_=$(curl "https://www.emulatorgames.net/roms/$1/" -skL | grep -Eo 'href="[^"]+/[0-9]+/"' | tail -n1 | awk -F'/' '{print $(NF-1)}')
-				_LAST_PAGE_COUNT_=$(curl "https://www.emulatorgames.net/roms/$1/$_PAGES_/" -skL | sed -E -e 's/(<li[^>]*>)/\n\1/g' -e 's/(<\/li>)/\1\n/g' | grep 'picture' | wc -l)
-				__ROMS_COUNT__=$(echo "$_PAGES_:$_LAST_PAGE_COUNT_" | awk '{print ($1-1)*48+$2}')
+				_LAST_PAGE_COUNT_=$(curl "https://www.emulatorgames.net/roms/$1/$([ -z "$_PAGES_" ] || echo "$_PAGES_/")" -skL | sed -E -e 's/(<li[^>]*>)/\n\1/g' -e 's/(<\/li>)/\1\n/g' | grep 'picture' | wc -l)
+				[ -z "$_PAGES_" ] && _PAGES_="1"
+				__ROMS_COUNT__=$(echo "$_PAGES_::::$_LAST_PAGE_COUNT_" | awk -F'::::' '{print ($1-1)*48+$2}')
 			}
 			;;
 		"romspure.cc")
