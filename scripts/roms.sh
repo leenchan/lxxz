@@ -14,6 +14,7 @@ DOWNLOAD_THREADS="16"
 [ -f "$CUR_DIR/roms_aliyun.sh" ] && . $CUR_DIR/roms_aliyun.sh >/dev/null 2>&1
 
 _init_() {
+	# https://www.romstation.fr/games/
 	WEBSITE_LIST=$(cat <<-EOF
 	romsgames.net:romsgames:1
 	emulatorgames.net:emulatorgames:2
@@ -135,12 +136,13 @@ get_file_size() {
 
 gen_index() {
 	# $1: type
-	[ -z "$1" ] && return 1
-	rom_init "$1"
+	__CONSOLE__=$(echo "$1" | awk -F'/' '{print $1}')
+	[ -z "$__CONSOLE__" ] && return 1
+	rom_init "$__CONSOLE__"
 	[ -d "$_ROM_CONSOLE_DIR_" ] || {
-		echo "[ERR] Could not find dir: $1" && return 1
+		echo "[ERR] Could not find dir: $__CONSOLE__" && return 1
 	}
-	_INDEX_FILE_="$CUR_DIR/${1}.html"
+	_INDEX_FILE_="$CUR_DIR/${__CONSOLE__}.html"
 	# _ROMS_TITLE_=$(grep -nr '"name":' "$CUR_DIR/$1/$INFO_DIR_NAME" | sed -E 's#(.*[^/]+\.txt).*"([^"]+)".*#\1::::\2#g')
 	_ROMS_HTML_=$(
 		while read __ROM_INFO_FILE__
@@ -152,6 +154,7 @@ gen_index() {
 			for _THUMB_EXT_ in $THUMB_EXT; do
 				[ -f "$_ROM_THUMBNAIL_DIR_/${__ROM_TITLE__}.${_THUMB_EXT_}" ] && __ROM_COVER__="$1/${THUBM_DIR_NAME}/${__ROM_TITLE__}.${_THUMB_EXT_}"
 			done
+			[ -z "$__ROM_COVER__" ] || __ROM_COVER__=$(echo "$__ROM_COVER__" | awk '{gsub(/#/,"%23",$0); print $0}')
 			
 			cat <<-EOF
 			<li class="rom"><div data-info="$__ROM_INFO_FILE_PATH__"><div class="cover"><img src="$__ROM_COVER__" />$_ACTION_HTML_</div><div><h3>$__ROM_TITLE__</h3></div></div></li>
@@ -197,7 +200,7 @@ gen_index() {
 	.action .icon {margin-left: 8px; cursor: pointer; width: 28px; height: 28px;}
 	.action .icon-download {background-color: #0091f7;}
 	.files {padding: 0; margin-top: 32px; width: 100%; max-width: 480px;}
-	.files td {padding: 12px; border-top: 1px solid #ccc;}
+	.files td {padding: 12px; border-top: 1px solid #ccc; vertical-align: top;}
 	.files td:first-child {padding-left: 0;}
 	.files-disabled>a::before {content: ""; display: inline-block; width: 16px; height: 16px; opacity: 0.5; vertical-align: top; background: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/PjwhRE9DVFlQRSBzdmcgIFBVQkxJQyAnLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4nICAnaHR0cDovL3d3dy53My5vcmcvR3JhcGhpY3MvU1ZHLzEuMS9EVEQvc3ZnMTEuZHRkJz48c3ZnIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDMyIDMyIiBoZWlnaHQ9IjMycHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjMycHgiIHhtbDpzcGFjZT0icHJlc2VydmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPjxnPjxwb2x5bGluZSBmaWxsPSJub25lIiBwb2ludHM9IiAgIDY0OSwxMzcuOTk5IDY3NSwxMzcuOTk5IDY3NSwxNTUuOTk5IDY2MSwxNTUuOTk5ICAiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIvPjxwb2x5bGluZSBmaWxsPSJub25lIiBwb2ludHM9IiAgIDY1MywxNTUuOTk5IDY0OSwxNTUuOTk5IDY0OSwxNDEuOTk5ICAiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIvPjxwb2x5bGluZSBmaWxsPSJub25lIiBwb2ludHM9IiAgIDY2MSwxNTYgNjUzLDE2MiA2NTMsMTU2ICAiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbWl0ZXJsaW1pdD0iMTAiIHN0cm9rZS13aWR0aD0iMiIvPjwvZz48cGF0aCBkPSJNMjcuOTIyLDEwLjYxNWMtMC4wNTEtMC4xMjItMC4xMjQtMC4yMzEtMC4yMTYtMC4zMjNsLTcuOTk4LTcuOTk4Yy0wLjA5Mi0wLjA5Mi0wLjIwMS0wLjE2NS0wLjMyMy0wLjIxNiAgQzE5LjI2NCwyLjAyNywxOS4xMzQsMiwxOSwySDVDNC40NDgsMiw0LDIuNDQ4LDQsM3MwLjQ0OCwxLDEsMWgxM3Y3YzAsMC41NTIsMC40NDcsMSwxLDFoN3YxNkg2VjdjMC0wLjU1Mi0wLjQ0OC0xLTEtMVM0LDYuNDQ4LDQsNyAgdjIyYzAsMC41NTMsMC40NDgsMSwxLDFoMjJjMC41NTMsMCwxLTAuNDQ3LDEtMVYxMUMyOCwxMC44NjcsMjcuOTczLDEwLjczNiwyNy45MjIsMTAuNjE1eiBNMjAsNS40MTRMMjQuNTg2LDEwSDIwVjUuNDE0eiIvPjwvc3ZnPg==') no-repeat; background-size: 75%; background-position: center;}
 	.search-bar {position: fixed; bottom: 12px; right: 0; width: 100%; max-width: 480px; display: flex; padding: 0 16px;}
@@ -495,7 +498,7 @@ download_rom() {
 			;;
 		"romspure.cc")
 			_ROM_HTML_=$(fetch_html "https://romspure.cc/roms/$1/$2/" --oneline)
-			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g')
+			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g' -e 's/\//-/g')
 			_ROM_DL_BTN_URL_=$(echo "$_ROM_HTML_" | grep -Eo 'http[^"]+/download/[^"]+')
 			[ -z "$_ROM_DL_BTN_URL_" ] && echo "[ERR] NO ROM Files."
 			[ -z "$_ROM_DL_BTN_URL_" ] || {
@@ -534,7 +537,8 @@ download_rom() {
 								_ROM_DL_FILE_HTML_=$(fetch_html "$_ROM_DL_URL_")
 								_ROM_DL_FILE_TITLE_=$(echo "$_ROM_DL_FILE_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^download *//ig')
 								_ROM_DL_FILE_URL_=$(echo "$_ROM_DL_FILE_HTML_" | grep 'click-here' | grep -Eo 'http[^"]+')
-								_ROM_DL_FILE_EXT_=$(echo "$_ROM_DL_FILE_URL_" | awk -F'.' '{print $NF}')
+								[ "$1" = "sega-dreamcast" ] && _ROM_DL_FILE_URL_=$(echo "$_ROM_DL_FILE_URL_" | awk '{gsub(/\.zip/,".7z",$0); print $0}')
+								_ROM_DL_FILE_EXT_=$(echo "$_ROM_DL_FILE_URL_" | awk -F'.' '{gsub(/\?.*/,"",$NF); print $NF}')
 								[ -z "$_ROM_DL_FILE_URL_" ] || echo "${_ROM_DL_FILE_URL_}::::$([ -z "$_ROM_DL_FILE_TITLE_" ] || echo "${_ROM_DL_FILE_TITLE_}.${_ROM_DL_FILE_EXT_}")"
 							}
 						done <<-EOF
@@ -594,7 +598,7 @@ download_rom() {
 					rom_downloaded_push "$_ROM_FILE_FULLPATH_"
 					_ROM_FILE_IS_OK_="true"
 				else
-					echo "[ERR] Fail to download ROM file: ($_ROM_FILE_URL_)"
+					echo "[ERR] Fail to download ROM file: ($_ROM_FILE_URL_)" && return 1
 				fi
 			}
 		fi
