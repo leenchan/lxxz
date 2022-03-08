@@ -201,8 +201,11 @@ _download_roms() {
 	# fi
 	while true
 	do
-		tmux ls | grep -Eq '^rom-' || sh "$CUR_DIR/main.sh" end
 		sleep 5
+		tmux ls | grep -Eq '^rom-' || {
+			sh "$CUR_DIR/main.sh" end
+			break
+		}
 	done
 	return 0
 }
