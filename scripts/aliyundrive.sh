@@ -262,23 +262,24 @@ _speedtest() {
 }
 
 _get_aliyundrive_host() {
-	[ "$IS_MAIN" ] && ALIYUNDRIVE_HOST="127.0.0.1" || {
-		__N2N_LAN_IP__=$(get_interface_ip ${N2N_DEVICE_NAME})
-		[ -z "$__N2N_LAN_IP__" ] || {
-			__N2N_LAN_IP_PREFIX__=$(echo "$__N2N_LAN_IP__" | awk -F'.' '{print $1"."$2"."$3}')
-			__HOSTS__=$(nmap -p${ALIYUNDRIVE_PORT} --open ${__N2N_LAN_IP_PREFIX__}.0/24 -Pn -oG - | grep -i "Ports: *${ALIYUNDRIVE_PORT}" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
-			echo "$__HOSTS__"
-			while read __HOST__
-			do
-				[ -z "$__HOST__" ] || {
-					curl -si -m 2 "http://${__HOST__}:${ALIYUNDRIVE_PORT}/${ALIYUNDRIVE_DL_PREFIX}" | head -n1 | grep -Eq '[23]0[1-9]' && ALIYUNDRIVE_HOST="$__HOST__"
-				}
-			done <<-EOF
-			$__HOSTS__
-			EOF
-			[ -z "$ALIYUNDRIVE_HOST" ] && ALIYUNDRIVE_HOST="127.0.0.1"
-		}
-	}
+	ALIYUNDRIVE_HOST="127.0.0.1"
+	# [ "$IS_MAIN" ] && ALIYUNDRIVE_HOST="127.0.0.1" || {
+	# 	__N2N_LAN_IP__=$(get_interface_ip ${N2N_DEVICE_NAME})
+	# 	[ -z "$__N2N_LAN_IP__" ] || {
+	# 		__N2N_LAN_IP_PREFIX__=$(echo "$__N2N_LAN_IP__" | awk -F'.' '{print $1"."$2"."$3}')
+	# 		__HOSTS__=$(nmap -p${ALIYUNDRIVE_PORT} --open ${__N2N_LAN_IP_PREFIX__}.0/24 -Pn -oG - | grep -i "Ports: *${ALIYUNDRIVE_PORT}" | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')
+	# 		echo "$__HOSTS__"
+	# 		while read __HOST__
+	# 		do
+	# 			[ -z "$__HOST__" ] || {
+	# 				curl -si -m 2 "http://${__HOST__}:${ALIYUNDRIVE_PORT}/${ALIYUNDRIVE_DL_PREFIX}" | head -n1 | grep -Eq '[23]0[1-9]' && ALIYUNDRIVE_HOST="$__HOST__"
+	# 			}
+	# 		done <<-EOF
+	# 		$__HOSTS__
+	# 		EOF
+	# 		[ -z "$ALIYUNDRIVE_HOST" ] && ALIYUNDRIVE_HOST="127.0.0.1"
+	# 	}
+	# }
 	echo "ALIYUNDRIVE_HOST=$ALIYUNDRIVE_HOST" >> "$GITHUB_ENV"
 	echo "$ALIYUNDRIVE_HOST" && return 0
 }
