@@ -389,14 +389,14 @@ need_decompression() {
 }
 
 on_rom_download() {
-	[ "$INCLUDED_ALIYUN" = "true" ] && aliyun_upload_rom "$@"
+	[ "$UPLOAD_TO_ALIYUN" = "true" ] && aliyun_upload_rom "$@"
 }
 
 exist_rom() {
 	# $1:console    $2:game short name    $3:info file
 	[ "$ONLY_DOWNLOAD_INFO" = "true" ] && return 1
 	[ "$FORCE_DOWNLOAD" = "true" ] && return 0
-	[ "$INCLUDED_ALIYUN" = "true" ] && aliyun_exist_rom "$1" "$2" "$3" && echo "[INFO] [$1] $2 exists. SKIP downloading." && return 0
+	[ "$UPLOAD_TO_ALIYUN" = "true" ] && aliyun_exist_rom "$1" "$2" "$3" && echo "[INFO] [$1] $2 exists. SKIP downloading." && return 0
 	[ -f "$3" ] && echo "[INFO] [$1] $2 exists. SKIP downloading." && return 0
 	return 1
 }
