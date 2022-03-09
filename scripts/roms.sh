@@ -544,7 +544,7 @@ download_rom() {
 								_ROM_DL_FILE_HTML_=$(fetch_html "$_ROM_DL_URL_")
 								_ROM_DL_FILE_TITLE_=$(echo "$_ROM_DL_FILE_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^download *//ig')
 								_ROM_DL_FILE_URL_=$(echo "$_ROM_DL_FILE_HTML_" | grep 'click-here' | grep -Eo 'http[^"]+' | head -n1)
-								_ROM_DL_FILE_URL_=$(echo "$_ROM_DL_FILE_HTML_" | grep -E "\\.($_ARCHIVE_EXT_REGEX_)")
+								_ROM_DL_FILE_URL_=$(echo "$_ROM_DL_FILE_URL_" | grep -E "\\.($_ARCHIVE_EXT_REGEX_)")
 								[ "$WEBSITE" = "romspure.cc" -a "$1" = "sega-dreamcast" ] && _ROM_DL_FILE_URL_=$(echo "$_ROM_DL_FILE_URL_" | awk '{gsub(/\.zip/,".7z",$0); print $0}')
 								_ROM_DL_FILE_EXT_=$(echo "$_ROM_DL_FILE_URL_" | awk -F'.' '{gsub(/\?.*/,"",$NF); print $NF}')
 								[ -z "$_ROM_DL_FILE_URL_" ] || echo "${_ROM_DL_FILE_URL_}::::$([ -z "$_ROM_DL_FILE_TITLE_" ] || echo "${_ROM_DL_FILE_TITLE_}.${_ROM_DL_FILE_EXT_}")"
