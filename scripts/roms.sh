@@ -468,6 +468,8 @@ download_rom() {
 	[ -z "$DL_COUNT" ] || DL_COUNT=$((DL_COUNT+1))
 	rom_init "$1" "$2" || return 1
 	exist_rom "$1" "$2" "$_ROM_INFO_FILE_" && return 2
+	# echo "$1/$2" | tee -a $CUR_DIR/to_download.txt
+	# return 0
 	case "$WEBSITE" in
 		"romsgames.net")
 			_ROM_HTML_=$(fetch_html "https://www.romsgames.net/${1}-rom-${2}/")
@@ -628,7 +630,7 @@ download_rom() {
 			echo "$_THUMB_URL_" | grep -Eq "\.(${_THUMB_EXT_REGEX_})" && {
 				_THUBM_EXT_=$(echo "$_THUMB_URL_" | grep -Eo "\.(${_THUMB_EXT_REGEX_})" | head -n1 | tr -d '.')
 				_THUMB_FILE_="${_ROM_THUMBNAIL_DIR_}/${_ROM_TITLE_}.${_THUBM_EXT_}"
-				[ -f "$_THUMB_FILE_" ] || {
+				[ -f "$_THUMB_FILE_" ] && rom_downloaded_push "$_THUMB_FILE_" || {
 					dl_file "$_THUMB_URL_" "--output=\"$_THUMB_FILE_\"" > /dev/null && echo "[INFO] Downloaded IMAGE: ${_ROM_TITLE_}.${_THUBM_EXT_}" && rom_downloaded_push "$_THUMB_FILE_"
 				}
 			}
@@ -676,7 +678,7 @@ dl_page() {
 		"romspure.cc"|"romsfun.com")
 			_PAGE_URL_="https://$WEBSITE/roms/$1/page/$2/"
 			_PAGE_HTML_=$(curl "$_PAGE_URL_" -skL)
-			_ROMS_URL_=$(echo "$_PAGE_HTML_" | tr -d '\n\r' | sed -E -e 's/(<tr[^>]*>)/\n\1/g' -e 's/(<\/tr>)/\1\n/g' | grep '^<tr.*<td' | sed -E 's/.*href="([^"]+)".*/\1/g' | awk -F'/' '{print $NF==""?$(NF-1):$NF}')
+			_ROMS_URL_=$(echo "$_PAGE_HTML_" | tr -d '\n\r' | sed -E -e 's/(<tr[^>]*>)/\n\1/g' -e 's/(<\/tr>)/\1\n/g' | grep '^<tr.*<td' | sed -E 's/.*href="([^"]+)".*/\1/g' | awk -F'/' '{gsub(/\.html.*/,"",$NF); print $NF==""?$(NF-1):$NF}')
 			;;
 		*)
 			return 1
@@ -697,16 +699,16 @@ download_console() {
 	_PAGES_=""
 	case "$WEBSITE" in
 		"romsgames.net")
-			_HTML_=$(curl "https://www.romsgames.net/roms/$1/?letter=all&page=1&sort=alphabetical" -skL)
+			_HTML_=$(fetch_html "https://www.romsgames.net/roms/$1/?letter=all&page=1&sort=alphabetical")
 			_PAGES_=$(echo "$_HTML_" | grep -Eo 'page=[0-9]+' | awk -F'=' '{print $2}' | tail -n1)
 			;;
 		"emulatorgames.net")
-			_HTML_=$(curl "https://www.emulatorgames.net/roms/$1/" -skL)
+			_HTML_=$(fetch_html "https://www.emulatorgames.net/roms/$1/")
 			_PAGES_=$(echo "$_HTML_" | grep -Eo 'href="[^"]+/[0-9]+/"' | tail -n1 | awk -F'/' '{print $(NF-1)}')
 			[ -z "$_PAGES_" ] && _PAGES_="1"
 			;;
 		"romspure.cc"|"romsfun.com")
-			_HTML_=$(curl "https://$WEBSITE/roms/$1" -skL)
+			_HTML_=$(fetch_html "https://$WEBSITE/roms/$1")
 			_PAGES_=$(echo "$_HTML_" | grep -Eo 'page/[0-9]+' | tail -n1 | awk -F'/' '{print $2}')
 			;;
 		*)
