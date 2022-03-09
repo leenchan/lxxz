@@ -19,6 +19,7 @@ _init_() {
 	romsgames.net:romsgames:1
 	emulatorgames.net:emulatorgames:2
 	romspure.cc:romspure:3
+	romsfun.com:romsfun:4
 	EOF
 	)
 	_ROM_EXT_REGEX_=$(echo "$ROMS_EXT $ARCHIVE_EXT" | tr ' ' '|')
@@ -32,8 +33,10 @@ _init_() {
 			WEBSITE="emulatorgames.net";;
 		"romspure"|"3")
 			WEBSITE="romspure.cc";;
+		"romsfun"|"4")
+			WEBSITE="romsfun.com";;
 		*)
-			WEBSITE="romspure.cc";;
+			WEBSITE="romsfun.com";;
 	esac
 }
 
@@ -497,9 +500,11 @@ download_rom() {
 			_ROM_DESCRIPTION_=$(echo "$_ROM_HTML_" | grep -Eo '<p>[^<]+</p>' | awk '{gsub(/<\/?p>/,"",$0); print $0}')
 			_ROM_HEADER_REFERER_=""
 			;;
-		"romspure.cc")
-			_ROM_HTML_=$(fetch_html "https://romspure.cc/roms/$1/$2/" --oneline)
+		"romspure.cc"|"romsfun.com")
+			_ROM_HTML_=$(fetch_html "https://$WEBSITE/roms/$1/$2/" --oneline)
+			# echo "$_ROM_HTML_"
 			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g' -e 's/\//-/g')
+			echo "_ROM_TITLE_: $_ROM_TITLE_"
 			_ROM_DL_BTN_URL_=$(echo "$_ROM_HTML_" | grep -Eo 'http[^"]+/download/[^"]+')
 			[ -z "$_ROM_DL_BTN_URL_" ] && echo "[ERR] NO ROM Files."
 			[ -z "$_ROM_DL_BTN_URL_" ] || {
@@ -550,7 +555,7 @@ download_rom() {
 			}
 			_THUMB_URLS_=$(echo "$_ROM_HTML_" | grep -Eo 'data-src="[^"]+"' | awk '{gsub(/(data-src=|")/,"",$0); print $0}')
 			_ROM_ID_=$(echo "$_ROM_HTML_" | grep -Eo 'data-post-id="[^"]+"' | awk '{gsub(/(data-post-id=|")/,"",$0); print $0}')
-			_ROM_DESCRIPTION_=$(curl "https://romspure.cc/wp-admin/admin-ajax.php?action=k_get_desc&post_id=${_ROM_ID_}" -skL | sed -E -e 's/.*"message":\s*"(.*)"}.*/\1/g' -e 's/<[^>]+>//g')
+			_ROM_DESCRIPTION_=$(curl "https://$WEBSITE/wp-admin/admin-ajax.php?action=k_get_desc&post_id=${_ROM_ID_}" -skL | sed -E -e 's/.*"message":\s*"(.*)"}.*/\1/g' -e 's/<[^>]+>//g')
 			[ -z "$_ROM_DESCRIPTION_" ] && _ROM_DESCRIPTION_=$(echo "$_ROM_HTML_" | sed -E -e 's/(<div[^>]*>)/\n\1/g' -e 's/<\/div>/\n/g' | grep 'entry-content' | sed -E 's/^<div[^>]+>//g')
 			_ROM_DETAILS_HTML_=$(echo "$_ROM_HTML_" | sed -E -e 's/(<tr[^>]*>)/\n\1/g' -e 's/<\/tr>/\n/g' | grep '^<tr' | sed -E -e 's/.*>([^<]+)<\/th>/\1::::/g' -e 's/<\/?[^>]*>//g')
 			_ROM_PUBLISHER_=$(echo "$_ROM_DETAILS_HTML_" | grep -i '^Publisher' | awk -F'::::' '{print $2}')
@@ -667,8 +672,8 @@ dl_page() {
 			_PAGE_HTML_=$(curl "$_PAGE_URL_" -skL)
 			_ROMS_URL_=$(echo "$_PAGE_HTML_" | sed -E 's/(<\/?ul[^>]*>)/\n\1/g' | grep 'site-list' | grep -Eo 'href="[^"]+"' | awk '{gsub(/"/,"",$0); gsub(/^href=/,"",$0); print $0}' | awk -F'/' '{print $NF=="" ? $(NF-1): $NF}')
 			;;
-		"romspure.cc")
-			_PAGE_URL_="https://romspure.cc/roms/$1/page/$2/"
+		"romspure.cc"|"romsfun.com")
+			_PAGE_URL_="https://$WEBSITE/roms/$1/page/$2/"
 			_PAGE_HTML_=$(curl "$_PAGE_URL_" -skL)
 			_ROMS_URL_=$(echo "$_PAGE_HTML_" | tr -d '\n\r' | sed -E -e 's/(<tr[^>]*>)/\n\1/g' -e 's/(<\/tr>)/\1\n/g' | grep '^<tr.*<td' | sed -E 's/.*href="([^"]+)".*/\1/g' | awk -F'/' '{print $NF==""?$(NF-1):$NF}')
 			;;
@@ -699,8 +704,8 @@ download_console() {
 			_PAGES_=$(echo "$_HTML_" | grep -Eo 'href="[^"]+/[0-9]+/"' | tail -n1 | awk -F'/' '{print $(NF-1)}')
 			[ -z "$_PAGES_" ] && _PAGES_="1"
 			;;
-		"romspure.cc")
-			_HTML_=$(curl "https://romspure.cc/roms/$1" -skL)
+		"romspure.cc"|"romsfun.com")
+			_HTML_=$(curl "https://$WEBSITE/roms/$1" -skL)
 			_PAGES_=$(echo "$_HTML_" | grep -Eo 'page/[0-9]+' | tail -n1 | awk -F'/' '{print $2}')
 			;;
 		*)
@@ -752,8 +757,8 @@ list_roms() {
 				__ROMS_COUNT__=$(echo "$_PAGES_::::$_LAST_PAGE_COUNT_" | awk -F'::::' '{print ($1-1)*48+$2}')
 			}
 			;;
-		"romspure.cc")
-			_HTML_=$(curl "https://romspure.cc/roms/" -skL)
+		"romspure.cc"|"romsfun.com")
+			_HTML_=$(curl "https://$WEBSITE/roms/" -skL)
 			_CONSOLE_LIST_=$(echo "$_HTML_" | tr -d '\n\r' | sed -E -e 's/(<tr[^>]*>)/\n\1/g' -e 's/(<\/tr>)/\1\n/g' | grep '^<tr.*<td' | sed -E -e 's/.*href="([^"]+)".*>([^<]+)<.*>([^<]+)<.*>([^<]+)<.*/\2::::\1::::\3::::\4/g' | sort)
 			;;
 		*)
