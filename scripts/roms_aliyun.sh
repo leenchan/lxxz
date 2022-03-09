@@ -2,7 +2,7 @@
 [ -d "/home/runner" ] && ROMS_ROOT_DIR="/home/runner/roms"
 [ -z "$DOWNLOAD_DIR" ] || ROMS_ROOT_DIR="$DOWNLOAD_DIR"
 [ -z "$RCLONE_ALIYUN_ROMS_DIR" ] && RCLONE_ALIYUN_ROMS_DIR="aliyun:/Game/roms"
-INCLUDED_ALIYUN="true"
+[ -z "$INCLUDED_ALIYUN" ] && INCLUDED_ALIYUN="true"
 
 aliyun_upload_rom() {
 	# $1:console   $2:game short name    $3:files
