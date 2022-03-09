@@ -467,7 +467,7 @@ download_rom() {
 	exist_rom "$1" "$2" "$_ROM_INFO_FILE_" && return 2
 	case "$WEBSITE" in
 		"romsgames.net")
-			_ROM_HTML_=$(curl "https://www.romsgames.net/${1}-rom-${2}/" -skL)
+			_ROM_HTML_=$(fetch_html "https://www.romsgames.net/${1}-rom-${2}/")
 			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+' | sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g')
 			_ROM_ID_=$(echo "$_ROM_HTML_" |  grep -Eo 'dlid="[^"]+"' | awk -F'=' '{gsub(/"/, "", $2); print $2}')
 			_ROM_DL_URLS_HTML_=$(curl "https://www.romsgames.net/download/${1}-rom-${2}/" --data-raw "mediaId=$_ROM_ID_" -skL)
@@ -476,12 +476,11 @@ download_rom() {
 			_ROM_DL_URL_ATTACH=$(echo "$_ROM_DL_URLS_HTML_" | grep -Eo 'value="[^"]+"' | awk '{gsub(/"/,"",$0); gsub(/^value=/,"",$0); print $0}')
 			_ROM_EXT_=$(echo "$_ROM_DL_URL_ATTACH" | awk -F'.' '{print $NF}')
 			[ -z "$_ROM_DL_URL_ACTION" -o -z "$_ROM_DL_URL_ATTACH" ] && return 1
-			_ROM_DL_URL_="${_ROM_DL_URL_ACTION}?attach=${_ROM_DL_URL_ATTACH}::::${_ROM_TITLE_}.${_ROM_EXT_}"
+			_ROM_DL_URLS_="${_ROM_DL_URL_ACTION}?attach=${_ROM_DL_URL_ATTACH}::::${_ROM_TITLE_}.${_ROM_EXT_}"
+			[ -z "$_ROM_DL_URLS_" ] && echo "$_ROM_DL_URLS_HTML_"
 			_THUMB_URLS_=$(echo "$_ROM_HTML_" | grep -Eo '<div[^>]*game-cover"[^>]*><img[^>+]+>' | grep -Eo 'data-src="[^"]+"' | awk '{gsub(/"/,"",$0);gsub(/^data-src=/,"",$0); print $0}')
 			_THUMB_URLS_=$(echo "$_THUMB_URLS_" | sed -E 's#^(\/.*)#https://www.romsgames.net\1#g')
 			_ROM_DESCRIPTION_=$(echo "$_ROM_HTML_" | sed -E -e 's/(<div[^>]*>)/\n\1/g' -e 's/(<\/div>)/\1\n/g'| grep 'screenshots' | sed -E 's/<[^>]+>//g')
-			_ROM_NAME_=$(echo "$_ROM_TITLE_" | awk '{gsub(/\//,"-",$0); print $0}')
-			_ROM_FILE_NAME_="${_ROM_NAME_}.${_ROM_EXT_}"
 			_ROM_HEADER_REFERER_="--header=\"Referer: https://www.romsgames.net/\""
 			;;
 		"emulatorgames.net")
@@ -492,9 +491,7 @@ download_rom() {
 			_ROM_DL_URLS_=$(echo "$_ROM_DL_URLS_HTML_" | sed -E -e 's/\\//g' | grep -Eo 'https?:[^"]+/roms/[^"]+')
 			_ROM_EXT_=$(echo "$_ROM_DL_URLS_" | awk -F'.' '{print $NF}')
 			_ROM_DL_URLS_="$_ROM_DL_URLS_::::${_ROM_TITLE_}.${_ROM_EXT_}"
-			[ -z "$_ROM_DL_URL_" ] && echo "$_ROM_DL_URLS_HTML_"
-			_ROM_FILE_NAME_=$(echo "$_ROM_DL_URL_" | awk -F'/' '{print $NF}')
-			_ROM_NAME_=$(echo "$_ROM_FILE_NAME_" | awk '{gsub(/\.[A-Za-z0-9]{2,4}$/,"",$0); print $0}')
+			[ -z "$_ROM_DL_URLS_" ] && echo "$_ROM_DL_URLS_HTML_"
 			_THUMB_HTML_=$(echo "$_ROM_HTML_" | sed -E 's/(<\/?picture[^>]*>)/\n\1/g' | grep -E '^<picture' | head -n1)
 			_THUMB_URLS_=$(echo "$_THUMB_HTML_" | grep -Eo "\"[^\"]+\.(${_THUMB_EXT_REGEX_})\"" | tr -d '"')
 			_ROM_DESCRIPTION_=$(echo "$_ROM_HTML_" | grep -Eo '<p>[^<]+</p>' | awk '{gsub(/<\/?p>/,"",$0); print $0}')
