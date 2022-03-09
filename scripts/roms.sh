@@ -503,8 +503,7 @@ download_rom() {
 		"romspure.cc"|"romsfun.com")
 			_ROM_HTML_=$(fetch_html "https://$WEBSITE/roms/$1/$2/" --oneline)
 			# echo "$_ROM_HTML_"
-			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g' -e 's/\//-/g')
-			echo "_ROM_TITLE_: $_ROM_TITLE_"
+			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e "s/&#39;/'/g" -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g' -e 's/\//-/g')
 			_ROM_DL_BTN_URL_=$(echo "$_ROM_HTML_" | grep -Eo 'http[^"]+/download/[^"]+')
 			[ -z "$_ROM_DL_BTN_URL_" ] && echo "[ERR] NO ROM Files."
 			[ -z "$_ROM_DL_BTN_URL_" ] || {
@@ -534,7 +533,7 @@ download_rom() {
 				# 	sleep 5
 				# 	__RETRY_GET_FILE_URL__=$((__RETRY_GET_FILE_URL__-1))
 				# done
-				echo "_ROM_DL_URL_LIST_: $_ROM_DL_URL_LIST_"
+				# echo "_ROM_DL_URL_LIST_: $_ROM_DL_URL_LIST_"
 				[ -z "$_ROM_DL_URL_LIST_" ] || {
 					_ROM_DL_URLS_=$(
 						while read _ROM_DL_URL_
@@ -571,6 +570,8 @@ download_rom() {
 	[ -d "$_ROM_CONSOLE_DIR_" ] || mkdir -p "$_ROM_CONSOLE_DIR_"
 	# Download ROM Files
 	[ -z "$_ROM_DL_URLS_" ] && [ "$ONLY_DOWNLOAD_INFO" != "true" ] && echo "[ERR] Could not get download URL of ROM: $1/$2" && return 1
+	[ -z "$_ROM_DL_URLS_" ] || _ROM_DL_URLS_=$(echo "$_ROM_DL_URLS_" | awk ' !x[$0]++')
+	echo "ROM_DL_URLS: $_ROM_DL_URLS_"
 	while read _ROM_DL_URL_
 	do
 		_ROM_FILE_NAME_=$(echo "$_ROM_DL_URL_" | awk -F'::::' '{print $2}')
@@ -601,7 +602,6 @@ download_rom() {
 					# 	}
 					# 	rm -rf $_ROM_CACHE_DIR_
 					# }
-					rom_downloaded_push "$_ROM_FILE_FULLPATH_"
 					_ROM_FILE_IS_OK_="true"
 				else
 					echo "[ERR] Fail to download ROM file: ($_ROM_FILE_URL_)" && return 1
@@ -609,6 +609,7 @@ download_rom() {
 			}
 		fi
 		[ "$_ROM_FILE_IS_OK_" = "true" ] && {
+			rom_downloaded_push "$_ROM_FILE_FULLPATH_"
 			_ROM_FILE_SIZE_=$(get_file_size "$_ROM_FILE_FULLPATH_")
 			_ROM_FILES_=$(cat <<-EOF | sed '/^[  ]*$/d'
 			$_ROM_FILES_$([ -z "$_ROM_FILES_" ] || echo ",")
