@@ -172,7 +172,7 @@ _download_roms() {
 	ROM_CONSOLE=""
 	ROM_SHORT_NAME=""
 	ROM_PAGE=""
-	ROM_URL=$(echo "$1" | awk '{gsub(/^https?:\/\/(www\.)?/,"",$0); gsub(/\/roms/,"",$0); print $0}')
+	ROM_URL=$(echo "$1" | awk '{gsub(/^https?:\/\/(www\.)?/,"",$0); gsub(/\/roms/,"",$0); gsub(/\.(html).*/,"",$0); print $0}')
 	eval "$(echo "$ROM_URL" | awk -F'/' '{print "WEBSITE=\""$1"\"; ROM_CONSOLE=\""$2"\"; ROM_SHORT_NAME=\""$3"\"; ROM_PAGE=\""$4"\""}')"
 	[ "$ROM_SHORT_NAME" = "page" ] && ROM_SHORT_NAME="$ROM_PAGE"
 	echo "$ROM_CONSOLE" | grep -q '\-rom\-' && eval "$(echo "$ROM_CONSOLE" | awk -F'-rom-' '{print "ROM_CONSOLE=\""$1"\"; ROM_SHORT_NAME=\""$2"\"; ROM_PAGE=\"\""}')"
