@@ -187,19 +187,6 @@ _download_roms() {
 		export WEBSITE="$WEBSITE"
 		sh "$CUR_DIR/roms.sh" download "$ROM_CONSOLE$([ -z "$ROM_SHORT_NAME" ] || echo "/$ROM_SHORT_NAME")" || return 1
 	}
-	# tmux_api sessions/keep_alive/run "sh '$CUR_DIR/main.sh' keep_alive"
-	# if echo "$1" | grep -Eq 'romsgames.net/'; then
-	# 	__ROM_WEBSITE__="romsgames.net"
-	# 	echo "$1" | grep -Eq 'romsgames.net/roms/[-a-zA-Z0-9]+' && __ROM_CONSOLE__=$(echo "$1" | grep -Eo 'romsgames.net/roms/[-a-zA-Z0-9]+' | awk -F'/' '{print $3}')
-	# 	echo "$1" | grep -Eq 'page=[0-9]+' && __ROM_PAGE__=$(echo "$1" | grep -Eo 'page=[0-9]+' | awk -F'=' '{print $2}')
-	# 	echo "$1" | grep -Eq 'sort=[a-z]+' && __ROM_SORT__=$(echo "$1" | grep -Eo 'page=[a-z]+' | awk -F'=' '{print $2}')
-	# 	echo "$1" | grep -Eq 'letter=[a-z0-9]+' && __ROM_LETTER__=$(echo "$1" | grep -Eo 'letter=[a-z0-9]+' | awk -F'=' '{print $2}')
-	# 	echo "$1" | grep -Eq 'romsgames.net/[-a-zA-Z0-9]+-rom-[-a-zA-Z0-9]+' && {
-	# 		__ROM__=$(echo "$1" | grep -Eo 'romsgames.net/[-a-zA-Z0-9]+-rom-[-a-zA-Z0-9]+' | awk -F'/' '{print $2}')
-	# 		eval $(echo "$__ROM__" | awk -F'-rom-' '{print "__ROM_CONSOLE__=\""$1"\";__ROM_NAME__=\""$2"\""}')
-	# 	}
-	# elif 
-	# fi
 	while true
 	do
 		sleep 5
@@ -234,7 +221,7 @@ _download() {
 				_download_github "$__URL__"
 			elif echo "$__URL__" | grep -Eq 'https://www\.youtube\.com/watch\?v='; then
 				_download_video "$__URL__"
-			elif echo "$__URL__" | grep -Eq '(emulatorgames\.net|romsgames\.net|romspure\.cc)'; then
+			elif echo "$__URL__" | grep -Eq '(emulatorgames\.net|romsgames\.net|romspure\.cc|romsfun\.com)'; then
 				_download_roms "$__URL__"
 			else
 				_aria2_api add "$@"
