@@ -3,7 +3,7 @@ CUR_DIR=$(cd "$(dirname "$0" 2>/dev/null)";pwd)
 ROMS_ROOT_DIR="$CUR_DIR"
 CACHE_DIR="$CUR_DIR/.cache"
 
-ROMS_EXT="z64 n64 bin cue"
+ROMS_EXT="z64 n64 bin cue wux iso"
 ARCHIVE_EXT="zip rar 7z zip"
 THUMB_EXT="webp jpg jpeg png gif mp4 flv"
 THUBM_DIR_NAME="thumbnail"
@@ -142,8 +142,8 @@ gen_index() {
 	__CONSOLE__=$(echo "$1" | awk -F'/' '{print $1}')
 	[ -z "$__CONSOLE__" ] && return 1
 	rom_init "$__CONSOLE__"
-	[ -d "$_ROM_CONSOLE_DIR_" ] || {
-		echo "[ERR] Could not find dir: $__CONSOLE__" && return 1
+	[ -d "$_ROM_INFO_PATH_" ] || {
+		echo "[ERR] Could not find dir: $_ROM_INFO_PATH_" && return 1
 	}
 	_INDEX_FILE_="$CUR_DIR/${__CONSOLE__}.html"
 	# _ROMS_TITLE_=$(grep -nr '"name":' "$CUR_DIR/$1/$INFO_DIR_NAME" | sed -E 's#(.*[^/]+\.txt).*"([^"]+)".*#\1::::\2#g')
@@ -423,9 +423,12 @@ rom_init() {
 	[ -z "$1" ] && return 1
 	ROM_DOWNLOADED=""
 	_ROM_CONSOLE_FULLNAME_="$1"
-	[ "$_ROM_CONSOLE_FULLNAME_" = "gamecube" ] && _ROM_CONSOLE_FULLNAME_="nintendo-gamecube"
-	[ "$_ROM_CONSOLE_FULLNAME_" = "wii" ] && _ROM_CONSOLE_FULLNAME_="nintendo-wii"
-	[ "$_ROM_CONSOLE_FULLNAME_" = "dreamcast" ] && _ROM_CONSOLE_FULLNAME_="sega-dreamcast"
+	case "$_ROM_CONSOLE_FULLNAME_" in
+		"gamecube"|"wii"|"wii-u")
+			_ROM_CONSOLE_FULLNAME_="nintendo-$_ROM_CONSOLE_FULLNAME_";;
+		"dreamcast")
+			_ROM_CONSOLE_FULLNAME_="sega-$_ROM_CONSOLE_FULLNAME_";;
+	esac
 	_ROM_CONSOLE_DIR_="$ROMS_ROOT_DIR/$_ROM_CONSOLE_FULLNAME_"
 	_ROM_INFO_PATH_="$_ROM_CONSOLE_FULLNAME_/$INFO_DIR_NAME"
 	_ROM_INFO_DIR_="$_ROM_CONSOLE_DIR_/$INFO_DIR_NAME"
@@ -779,10 +782,11 @@ list_roms() {
 		EOF
 	else
 		_CONSOLE_=$(echo "$_CONSOLE_LIST_" | grep -E "/roms/$1/?::::" | head -n1)
+		rom_init "$1"
 		[ -z "$_CONSOLE_" ] || {
 			eval $(echo "$_CONSOLE_" | awk -F'::::' '{print "_ROMS_TITLE_=\""$1"\"; _ROMS_COUNT_=\""$3"\""}')
 			[ -z "$_ROMS_COUNT_" ] && _ROMS_COUNT_="$__ROMS_COUNT__"
-			_ROMS_COUNT_LOCAL_=$(ls "$CUR_DIR/$1" 2>/dev/null | grep -E "\.($_ROM_EXT_REGEX_)$" | sed -E "s/\.($_ROM_EXT_REGEX_)$//" | sort -u | wc -l)
+			_ROMS_COUNT_LOCAL_=$(ls "$_ROM_INFO_PATH_" 2>/dev/null | wc -l)
 			cat <<-EOF
 			$_ROMS_TITLE_ ($1)
 			Website    : $WEBSITE
