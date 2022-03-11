@@ -32,17 +32,20 @@ _init_() {
 	_THUMB_EXT_REGEX_=$(echo "$THUMB_EXT" | tr ' ' '|')
 	_ROM_NEED_EXTRACT_REGEX_=$(echo "$NEED_EXTRACT" | tr ' ' '|')
 	case "$WEBSITE" in
-		"romsgames"|"1")
+		"romsgames.net"|"romsgames"|"1")
 			WEBSITE="romsgames.net";;
-		"emulatorgames"|"2")
+		"emulatorgames.net"|"emulatorgames"|"2")
 			WEBSITE="emulatorgames.net";;
-		"romspure"|"3")
+		"romspure.cc"|"romspure"|"3")
 			WEBSITE="romspure.cc";;
-		"romsfun"|"4")
-			WEBSITE="romsfun.com";;
-		*)
+		"romsfun.com"|"romsfun"|"4")
 			WEBSITE="romsfun.com";;
 	esac
+	[ -z "$WEBSITE" ] && WEBSITE="romsfun.com"
+	echo "$WEBSITE_LIST" | awk -F':' '{print $1}' | grep -Eq "^$WEBSITE$" || {
+		echo "[ERR] Sorry, not support downloading Roms from $WEBSITE" && exit 1 
+	}
+	return 0
 }
 
 extract_file() {
@@ -515,8 +518,7 @@ download_rom() {
 			# echo "$_ROM_HTML_"
 			_ROM_TITLE_=$(echo "$_ROM_HTML_" | grep -Eo '<h1[^>]*>[^<]+'| sed -E -e 's/<[^>]+>//g' -e "s/&#39;/'/g" -e 's/&amp;/\&/g' -e 's/&[^;]+;//g' -e 's/^\s+//g' -e 's/\s+$//g' -e 's/\//-/g')
 			_ROM_DL_BTN_URL_=$(echo "$_ROM_HTML_" | grep -Eo 'http[^"]+/download/[^"]+')
-			[ -z "$_ROM_DL_BTN_URL_" ] && echo "[ERR] NO ROM Files."
-			[ -z "$_ROM_DL_BTN_URL_" ] || {
+			[ -z "$_ROM_DL_BTN_URL_" ] && echo "[ERR] NO ROM Files." || {
 				_ROM_DL_URL_LIST_=$(fetch_html "$_ROM_DL_BTN_URL_" | grep -Eo 'http[^"]+/download/[^"]+')
 				[ "$_ROM_DL_URL_LIST_" = "$_ROM_DL_BTN_URL_" ] && {
 					_ROM_DL_URL_LIST_=""
