@@ -96,6 +96,7 @@ _aria2_api() {
 }
 
 _install_aria2() {
+	echo "[INFO] Installing aria2 ..."
 	# Aria2 Conf: https://github.com/P3TERX/aria2.conf/raw/master/aria2.conf
 	# Aria2 Bin: https://github.com/P3TERX/Aria2-Pro-Core/releases/download/1.36.0_2021.08.22/aria2-1.36.0-static-linux-amd64.tar.gz
 	mkdir -p "$ARIA2_ROOT"
@@ -121,10 +122,11 @@ _install_aria2() {
 }
 
 _install_youtube_dl() {
-	sudo apt-get install ffmpeg
+	echo "[INFO] Installing ffmpeg, yt-dlp ..."
+	sudo apt-get install ffmpeg >/dev/null 2>&1
 	# sudo pip install youtube_dl
 	# YT-DLP: https://github.com/yt-dlp/yt-dlp/
-	sudo pip install -U yt-dlp
+	sudo pip install -U yt-dlp >/dev/null 2>&1
 }
 
 _init() {

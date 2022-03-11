@@ -394,8 +394,7 @@ _init_nfs() {
 	sudo exportfs -ra
 }
 
-_init() {
-	_init_nfs
+_init_clean() {
 	sudo timedatectl set-timezone "$TZ"
 	sudo -E apt-get -qq update
 	# sudo -E apt-get -qq install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3 python2.7 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx-ucl libelf-dev autoconf automake libtool autopoint device-tree-compiler ccache xsltproc rename antlr3 gperf wget curl swig rsync
@@ -405,6 +404,13 @@ _init() {
 	sudo -E apt-get -qq clean
 	sudo rm -rf /usr/share/rust /usr/share/miniconda /usr/share/swift /opt/hostedtoolcache/
 	# sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android
+}
+
+_init() {
+	echo "[INFO] Setting up NFS ..."
+	_init_nfs >/dev/null 2>&1
+	echo "[INFO] Removing unused packages and files for More Disk Space ..."
+	_init_clean >/dev/null 2>&1
 }
 
 [ -z "$1" ] || {
