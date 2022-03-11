@@ -1,7 +1,6 @@
 #!/bin/sh
 CUR_DIR=$(cd "$(dirname "$0" 2>/dev/null)";pwd)
-ROMS_ROOT_DIR="$CUR_DIR"
-CACHE_DIR="$CUR_DIR/.cache"
+
 
 ROMS_EXT="z64 n64 bin cue wux iso"
 ARCHIVE_EXT="zip rar 7z zip"
@@ -12,6 +11,12 @@ INFO_DIR_NAME="info"
 DOWNLOAD_THREADS="16"
 
 [ -f "$CUR_DIR/roms_aliyun.sh" ] && . $CUR_DIR/roms_aliyun.sh >/dev/null 2>&1
+[ -z "$DOWNLOAD_DIR" ] || {
+	[ -d "$DOWNLOAD_DIR" ] || mkdir -p "$DOWNLOAD_DIR"
+	[ -d "$DOWNLOAD_DIR" ] && ROMS_ROOT_DIR="$DOWNLOAD_DIR" || exit 0
+}
+[ -z "$ROMS_ROOT_DIR" ] && ROMS_ROOT_DIR="$CUR_DIR"
+CACHE_DIR="$CUR_DIR/.cache"
 
 _init_() {
 	# https://www.romstation.fr/games/
@@ -142,10 +147,10 @@ gen_index() {
 	__CONSOLE__=$(echo "$1" | awk -F'/' '{print $1}')
 	[ -z "$__CONSOLE__" ] && return 1
 	rom_init "$__CONSOLE__"
-	[ -d "$_ROM_INFO_PATH_" ] || {
-		echo "[ERR] Could not find dir: $_ROM_INFO_PATH_" && return 1
+	[ -d "$_ROM_INFO_DIR_" ] || {
+		echo "[ERR] Could not find dir: $_ROM_INFO_DIR_" && return 1
 	}
-	_INDEX_FILE_="$CUR_DIR/${__CONSOLE__}.html"
+	_INDEX_FILE_="$ROMS_ROOT_DIR/${__CONSOLE__}.html"
 	# _ROMS_TITLE_=$(grep -nr '"name":' "$CUR_DIR/$1/$INFO_DIR_NAME" | sed -E 's#(.*[^/]+\.txt).*"([^"]+)".*#\1::::\2#g')
 	_ROMS_HTML_=$(
 		while read __ROM_INFO_FILE__
